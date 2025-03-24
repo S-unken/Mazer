@@ -15,7 +15,7 @@
     <script>
         let scene, camera, renderer, controls, player;
         let walls = [];
-        let velocity = new THREE.Vector3();
+        let keys = {};
         const speed = 0.1;
 
         function init() {
@@ -30,8 +30,15 @@
             scene.add(light);
             
             const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(1, 1, 1);
+            directionalLight.position.set(5, 10, 5);
             scene.add(directionalLight);
+
+            // Floor
+            const floorGeometry = new THREE.PlaneGeometry(50, 50);
+            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, side: THREE.DoubleSide });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
 
             // Maze generation (walls)
             const mazeSize = 10;
@@ -56,25 +63,16 @@
             player.position.set(0, 1, 0);
             scene.add(player);
 
-            camera.position.set(0, 5, 5);
+            camera.position.set(0, 5, 10);
             camera.lookAt(player.position);
 
             // Controls
             controls = new THREE.PointerLockControls(camera, document.body);
             document.addEventListener('click', () => controls.lock());
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-            scene.add(controls.getObject());
+            document.addEventListener('keydown', (event) => keys[event.code] = true);
+            document.addEventListener('keyup', (event) => keys[event.code] = false);
 
             animate();
-        }
-
-        let keys = {};
-        function onKeyDown(event) {
-            keys[event.code] = true;
-        }
-        function onKeyUp(event) {
-            keys[event.code] = false;
         }
 
         function checkCollisions(newPosition) {
