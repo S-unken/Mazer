@@ -13,9 +13,10 @@
 </head>
 <body>
     <script>
-        let scene, camera, renderer, controls;
+        let scene, camera, renderer, controls, player;
         let walls = [];
-        let playerMesh;
+        let velocity = new THREE.Vector3();
+        const speed = 0.1;
 
         function init() {
             scene = new THREE.Scene();
@@ -32,7 +33,7 @@
             directionalLight.position.set(1, 1, 1);
             scene.add(directionalLight);
 
-            // Maze generation (basic walls)
+            // Maze generation (walls)
             const mazeSize = 10;
             const wallGeometry = new THREE.BoxGeometry(2, 2, 2);
             const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
@@ -41,7 +42,7 @@
                 for (let z = 0; z < mazeSize; z++) {
                     if (Math.random() > 0.3) { // Random walls
                         let wall = new THREE.Mesh(wallGeometry, wallMaterial);
-                        wall.position.set(x * 2, 1, z * 2);
+                        wall.position.set(x * 2 - mazeSize, 1, z * 2 - mazeSize);
                         scene.add(wall);
                         walls.push(wall);
                     }
@@ -49,36 +50,69 @@
             }
 
             // Player
-            const playerGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+            const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
             const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-            playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
-            playerMesh.position.set(0, 1, 0);
-            scene.add(playerMesh);
+            player = new THREE.Mesh(playerGeometry, playerMaterial);
+            player.position.set(0, 1, 0);
+            scene.add(player);
 
             camera.position.set(0, 5, 5);
-            camera.lookAt(playerMesh.position);
+            camera.lookAt(player.position);
 
             // Controls
             controls = new THREE.PointerLockControls(camera, document.body);
             document.addEventListener('click', () => controls.lock());
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
             scene.add(controls.getObject());
 
-            function animate() {
-                requestAnimationFrame(animate);
-                checkCollisions();
-                renderer.render(scene, camera);
-            }
             animate();
         }
 
-        function checkCollisions() {
+        let keys = {};
+        function onKeyDown(event) {
+            keys[event.code] = true;
+        }
+        function onKeyUp(event) {
+            keys[event.code] = false;
+        }
+
+        function checkCollisions(newPosition) {
+            let playerBox = new THREE.Box3().setFromObject(player);
             for (let wall of walls) {
-                let distance = playerMesh.position.distanceTo(wall.position);
-                if (distance < 1.5) {
-                    console.log("Collision detected!");
-                    // Handle collision response
+                let wallBox = new THREE.Box3().setFromObject(wall);
+                if (playerBox.intersectsBox(wallBox)) {
+                    return true;
                 }
             }
+            return false;
+        }
+
+        function movePlayer() {
+            let direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            direction.y = 0;
+            direction.normalize();
+
+            let movement = new THREE.Vector3();
+            if (keys["KeyW"]) movement.add(direction);
+            if (keys["KeyS"]) movement.sub(direction);
+            if (keys["KeyA"]) movement.add(new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), direction).normalize());
+            if (keys["KeyD"]) movement.sub(new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), direction).normalize());
+            
+            movement.multiplyScalar(speed);
+            let newPosition = player.position.clone().add(movement);
+            
+            if (!checkCollisions(newPosition)) {
+                player.position.add(movement);
+                camera.position.add(movement);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            movePlayer();
+            renderer.render(scene, camera);
         }
 
         window.onload = init;
