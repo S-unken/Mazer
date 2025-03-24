@@ -21,13 +21,13 @@
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer();
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
             // Lighting
-            const light = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(light);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
             
             const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
             directionalLight.position.set(5, 10, 5);
@@ -40,7 +40,7 @@
             floor.rotation.x = -Math.PI / 2;
             scene.add(floor);
 
-            // Maze generation (walls)
+            // Maze walls
             const mazeSize = 10;
             const wallGeometry = new THREE.BoxGeometry(2, 2, 2);
             const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
@@ -49,7 +49,7 @@
                 for (let z = 0; z < mazeSize; z++) {
                     if (Math.random() > 0.3) { // Random walls
                         let wall = new THREE.Mesh(wallGeometry, wallMaterial);
-                        wall.position.set(x * 2 - mazeSize, 1, z * 2 - mazeSize);
+                        wall.position.set(x * 2 - mazeSize / 2, 1, z * 2 - mazeSize / 2);
                         scene.add(wall);
                         walls.push(wall);
                     }
