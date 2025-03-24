@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mazer - 3D Maze Escape</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+    <script>
+        let scene, camera, renderer, controls;
+        let walls = [];
+        let playerMesh;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const light = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(light);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            // Maze generation (basic walls)
+            const mazeSize = 10;
+            const wallGeometry = new THREE.BoxGeometry(2, 2, 2);
+            const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+            
+            for (let x = 0; x < mazeSize; x++) {
+                for (let z = 0; z < mazeSize; z++) {
+                    if (Math.random() > 0.3) { // Random walls
+                        let wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                        wall.position.set(x * 2, 1, z * 2);
+                        scene.add(wall);
+                        walls.push(wall);
+                    }
+                }
+            }
+
+            // Player
+            const playerGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+            const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+            playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+            playerMesh.position.set(0, 1, 0);
+            scene.add(playerMesh);
+
+            camera.position.set(0, 5, 5);
+            camera.lookAt(playerMesh.position);
+
+            // Controls
+            controls = new THREE.PointerLockControls(camera, document.body);
+            document.addEventListener('click', () => controls.lock());
+            scene.add(controls.getObject());
+
+            function animate() {
+                requestAnimationFrame(animate);
+                checkCollisions();
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function checkCollisions() {
+            for (let wall of walls) {
+                let distance = playerMesh.position.distanceTo(wall.position);
+                if (distance < 1.5) {
+                    console.log("Collision detected!");
+                    // Handle collision response
+                }
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
